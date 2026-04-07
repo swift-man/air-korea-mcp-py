@@ -2,30 +2,23 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Protocol
 
 from .exceptions import AirKoreaError
 
-DEFAULT_TRANSPORT = "streamable-http"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 DEFAULT_STREAMABLE_HTTP_PATH = "/mcp"
-VALID_TRANSPORTS = {"stdio", "streamable-http", "sse"}
 
 
 @dataclass(frozen=True)
 class RuntimeConfig:
-    transport: str = DEFAULT_TRANSPORT
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
     streamable_http_path: str = DEFAULT_STREAMABLE_HTTP_PATH
 
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
-        transport = os.getenv("AIR_KOREA_MCP_TRANSPORT", DEFAULT_TRANSPORT).strip()
-        if transport not in VALID_TRANSPORTS:
-            allowed = ", ".join(sorted(VALID_TRANSPORTS))
-            raise AirKoreaError(f"AIR_KOREA_MCP_TRANSPORT must be one of: {allowed}")
-
         host = os.getenv("AIR_KOREA_MCP_HOST", DEFAULT_HOST).strip() or DEFAULT_HOST
         port_raw = os.getenv("AIR_KOREA_MCP_PORT", str(DEFAULT_PORT)).strip()
         path = os.getenv("AIR_KOREA_MCP_PATH", DEFAULT_STREAMABLE_HTTP_PATH).strip() or DEFAULT_STREAMABLE_HTTP_PATH
@@ -42,14 +35,23 @@ class RuntimeConfig:
             path = f"/{path}"
 
         return cls(
-            transport=transport,
             host=host,
             port=port,
             streamable_http_path=path,
         )
 
 
-def apply_runtime_config(mcp, config: RuntimeConfig) -> None:
+class SupportsStreamableHttpSettings(Protocol):
+    host: str
+    port: int
+    streamable_http_path: str
+
+
+class SupportsStreamableHttpRuntime(Protocol):
+    settings: SupportsStreamableHttpSettings
+
+
+def apply_runtime_config(mcp: SupportsStreamableHttpRuntime, config: RuntimeConfig) -> None:
     mcp.settings.host = config.host
     mcp.settings.port = config.port
     mcp.settings.streamable_http_path = config.streamable_http_path

@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol
 
 from .constants import DEFAULT_RETURN_TYPE, VALID_DATA_TERMS, VALID_INFORM_CODES, VALID_SIDO_NAMES
-from .gateway import AirKoreaGateway, UrllibAirKoreaGateway
-from .settings import AirKoreaSettings
+from .gateway import AirKoreaGateway
 from .validation import require_text, validate_choice, validate_optional_iso_date, validate_positive_int
 
 
@@ -57,11 +56,6 @@ class AirKoreaServiceProtocol(Protocol):
 @dataclass(frozen=True)
 class AirKoreaService:
     gateway: AirKoreaGateway
-
-    @classmethod
-    def from_env(cls) -> "AirKoreaService":
-        settings = AirKoreaSettings.from_env()
-        return cls(gateway=UrllibAirKoreaGateway(settings=settings))
 
     def get_air_quality_forecast(
         self,

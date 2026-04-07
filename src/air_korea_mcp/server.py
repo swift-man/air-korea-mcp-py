@@ -5,17 +5,18 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
+from .bootstrap import create_air_korea_service
 from .exceptions import AirKoreaError
 from .reference import build_reference_payload
 from .runtime import RuntimeConfig, apply_runtime_config
-from .service import AirKoreaService, AirKoreaServiceProtocol
+from .service import AirKoreaServiceProtocol
 
 mcp = FastMCP("Air Korea", stateless_http=True, json_response=True)
 
 
 @lru_cache(maxsize=1)
 def get_service() -> AirKoreaServiceProtocol:
-    return AirKoreaService.from_env()
+    return create_air_korea_service()
 
 
 @mcp.resource("airkorea://reference")
@@ -104,7 +105,7 @@ def main() -> None:
     try:
         runtime_config = RuntimeConfig.from_env()
         apply_runtime_config(mcp, runtime_config)
-        mcp.run(transport=runtime_config.transport)
+        mcp.run(transport="streamable-http")
     except AirKoreaError as exc:
         raise SystemExit(str(exc)) from exc
 

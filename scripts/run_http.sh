@@ -7,7 +7,7 @@ VENV_DIR="${ROOT_DIR}/.venv"
 ENV_FILE="${ROOT_DIR}/.env"
 
 if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
-  echo "Virtual environment not found. Run ${ROOT_DIR}/scripts/setup_linux.sh first." >&2
+  echo "Virtual environment not found. Create .venv and install the project first." >&2
   exit 1
 fi
 
@@ -23,12 +23,11 @@ if [[ -z "${AIR_KOREA_SERVICE_KEY:-}" && -z "${AIR_KOREA_SERVICE_KEY_ENCODED:-}"
   exit 1
 fi
 
-export AIR_KOREA_MCP_TRANSPORT="${AIR_KOREA_MCP_TRANSPORT:-streamable-http}"
 export AIR_KOREA_MCP_HOST="${AIR_KOREA_MCP_HOST:-127.0.0.1}"
 export AIR_KOREA_MCP_PORT="${AIR_KOREA_MCP_PORT:-8000}"
 export AIR_KOREA_MCP_PATH="${AIR_KOREA_MCP_PATH:-/mcp}"
 
-echo "Starting Air Korea MCP over ${AIR_KOREA_MCP_TRANSPORT}"
+echo "Starting Air Korea MCP over streamable-http"
 echo "Endpoint: http://${AIR_KOREA_MCP_HOST}:${AIR_KOREA_MCP_PORT}${AIR_KOREA_MCP_PATH}"
 
 exec air-korea-mcp

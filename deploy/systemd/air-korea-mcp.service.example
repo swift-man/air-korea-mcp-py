@@ -1,0 +1,18 @@
+[Unit]
+Description=Air Korea MCP Streamable HTTP Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=your-user
+Group=your-user
+WorkingDirectory=/opt/air-korea-mcp-py
+ExecStart=/opt/air-korea-mcp-py/scripts/run_http.sh
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

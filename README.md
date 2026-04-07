@@ -39,6 +39,7 @@
 
 SOLID 관점에서 책임을 다음처럼 나눴습니다.
 
+- `bootstrap.py`: composition root, settings와 gateway를 조립해서 service 생성
 - `settings.py`: 환경 변수와 런타임 설정 로딩
 - `validation.py`: 입력 검증
 - `gateway.py`: HTTP 전송과 Air Korea 응답 정규화
@@ -58,7 +59,6 @@ SOLID 관점에서 책임을 다음처럼 나눴습니다.
 
 - `AIR_KOREA_API_BASE`: 기본값 `https://apis.data.go.kr/B552584/ArpltnInforInqireSvc`
 - `AIR_KOREA_TIMEOUT_SECONDS`: 기본값 `15`
-- `AIR_KOREA_MCP_TRANSPORT`: 기본값 `streamable-http`
 - `AIR_KOREA_MCP_HOST`: 기본값 `127.0.0.1`
 - `AIR_KOREA_MCP_PORT`: 기본값 `8000`
 - `AIR_KOREA_MCP_PATH`: 기본값 `/mcp`
@@ -83,15 +83,9 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-리눅스에서 `git pull` 후 바로 설치하려면:
-
-```bash
-./scripts/setup_linux.sh
-```
-
 ## 실행
 
-기본 실행은 Streamable HTTP transport 입니다.
+이 프로젝트는 Streamable HTTP transport만 지원합니다.
 
 ```bash
 ./scripts/run_http.sh
@@ -100,7 +94,7 @@ pip install -e .
 또는:
 
 ```bash
-AIR_KOREA_MCP_TRANSPORT=streamable-http python -m air_korea_mcp
+python -m air_korea_mcp
 ```
 
 기본 엔드포인트:
@@ -115,20 +109,77 @@ http://127.0.0.1:8000/mcp
 claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 ```
 
-stdio가 필요하면 별도 스크립트를 사용합니다.
-
-```bash
-./scripts/run_stdio.sh
-```
-
-`.env` 파일이 있으면 `scripts/run_http.sh`와 `scripts/run_stdio.sh`가 함께 읽습니다.
+`.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽습니다.
 
 `.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
 
-중요:
-- `scripts/run_stdio.sh`는 사람이 터미널에서 직접 쓰는 CLI가 아닙니다.
-- MCP 클라이언트가 stdio로 붙어야 합니다.
-- 일반 터미널에서 실행 후 Enter를 누르면 빈 줄이 stdin으로 들어가서 `Invalid JSON: EOF while parsing a value` 같은 오류가 납니다.
+## systemd
+
+Streamable HTTP 서버라서 `systemd` 백그라운드 서비스 등록이 가능합니다.
+
+예제 유닛 파일:
+- [air-korea-mcp.service.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/deploy/systemd/air-korea-mcp.service.example)
+
+기본 방식:
+- `systemd`는 `scripts/run_http.sh`를 실행합니다.
+- `run_http.sh`는 프로젝트 루트의 `.env`를 읽습니다.
+- 즉 서비스 파일 안에 서비스키를 직접 넣지 않아도 됩니다.
+
+예시 절차:
+
+```bash
+cd /opt
+git clone https://github.com/swift-man/air-korea-mcp-py.git
+cd air-korea-mcp-py
+python3.10 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+cp .env.example .env
+nano .env
+```
+
+`.env` 예시:
+
+```bash
+AIR_KOREA_SERVICE_KEY=your-service-key
+AIR_KOREA_MCP_HOST=127.0.0.1
+AIR_KOREA_MCP_PORT=8000
+AIR_KOREA_MCP_PATH=/mcp
+```
+
+유닛 파일 등록:
+
+```bash
+sudo cp deploy/systemd/air-korea-mcp.service.example /etc/systemd/system/air-korea-mcp.service
+sudo nano /etc/systemd/system/air-korea-mcp.service
+```
+
+수정할 값:
+- `User=your-user`
+- `Group=your-user`
+- `WorkingDirectory=/opt/air-korea-mcp-py`
+- `ExecStart=/opt/air-korea-mcp-py/scripts/run_http.sh`
+
+등록 및 시작:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now air-korea-mcp
+sudo systemctl status air-korea-mcp
+```
+
+로그 보기:
+
+```bash
+journalctl -u air-korea-mcp -f
+```
+
+중지 / 재시작:
+
+```bash
+sudo systemctl stop air-korea-mcp
+sudo systemctl restart air-korea-mcp
+```
 
 ## 테스트
 

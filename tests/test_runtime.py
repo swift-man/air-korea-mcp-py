@@ -21,7 +21,6 @@ class RuntimeConfigTests(unittest.TestCase):
     def test_defaults(self):
         config = RuntimeConfig.from_env()
 
-        self.assertEqual("streamable-http", config.transport)
         self.assertEqual("127.0.0.1", config.host)
         self.assertEqual(8000, config.port)
         self.assertEqual("/mcp", config.streamable_http_path)
@@ -39,25 +38,20 @@ class RuntimeConfigTests(unittest.TestCase):
 
         self.assertEqual("/custom", config.streamable_http_path)
 
-    def test_invalid_transport_raises(self):
-        old = os.environ.get("AIR_KOREA_MCP_TRANSPORT")
-        os.environ["AIR_KOREA_MCP_TRANSPORT"] = "invalid"
+    def test_invalid_port_raises(self):
+        old = os.environ.get("AIR_KOREA_MCP_PORT")
+        os.environ["AIR_KOREA_MCP_PORT"] = "abc"
         try:
             with self.assertRaises(AirKoreaError):
                 RuntimeConfig.from_env()
         finally:
             if old is None:
-                os.environ.pop("AIR_KOREA_MCP_TRANSPORT", None)
+                os.environ.pop("AIR_KOREA_MCP_PORT", None)
             else:
-                os.environ["AIR_KOREA_MCP_TRANSPORT"] = old
+                os.environ["AIR_KOREA_MCP_PORT"] = old
 
     def test_apply_runtime_config(self):
-        config = RuntimeConfig(
-            transport="streamable-http",
-            host="0.0.0.0",
-            port=9000,
-            streamable_http_path="/air",
-        )
+        config = RuntimeConfig(host="0.0.0.0", port=9000, streamable_http_path="/air")
         mcp = DummyMcp()
 
         apply_runtime_config(mcp, config)
