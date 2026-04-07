@@ -7,9 +7,10 @@ from mcp.server.fastmcp import FastMCP
 
 from .exceptions import AirKoreaError
 from .reference import build_reference_payload
+from .runtime import RuntimeConfig, apply_runtime_config
 from .service import AirKoreaService, AirKoreaServiceProtocol
 
-mcp = FastMCP("Air Korea", json_response=True)
+mcp = FastMCP("Air Korea", stateless_http=True, json_response=True)
 
 
 @lru_cache(maxsize=1)
@@ -101,7 +102,9 @@ def get_sido_measurements(
 
 def main() -> None:
     try:
-        mcp.run()
+        runtime_config = RuntimeConfig.from_env()
+        apply_runtime_config(mcp, runtime_config)
+        mcp.run(transport=runtime_config.transport)
     except AirKoreaError as exc:
         raise SystemExit(str(exc)) from exc
 

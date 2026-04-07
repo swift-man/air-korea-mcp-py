@@ -34,5 +34,6 @@ python -m pip install -e "${ROOT_DIR}"
 echo
 echo "Setup complete."
 echo "Next:"
-echo "  export AIR_KOREA_SERVICE_KEY='your-service-key'"
-echo "  ${ROOT_DIR}/scripts/run_stdio.sh"
+echo "  cp ${ROOT_DIR}/.env.example ${ROOT_DIR}/.env"
+echo "  edit ${ROOT_DIR}/.env"
+echo "  ${ROOT_DIR}/scripts/run_http.sh"

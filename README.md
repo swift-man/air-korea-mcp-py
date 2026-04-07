@@ -58,11 +58,21 @@ SOLID 관점에서 책임을 다음처럼 나눴습니다.
 
 - `AIR_KOREA_API_BASE`: 기본값 `https://apis.data.go.kr/B552584/ArpltnInforInqireSvc`
 - `AIR_KOREA_TIMEOUT_SECONDS`: 기본값 `15`
+- `AIR_KOREA_MCP_TRANSPORT`: 기본값 `streamable-http`
+- `AIR_KOREA_MCP_HOST`: 기본값 `127.0.0.1`
+- `AIR_KOREA_MCP_PORT`: 기본값 `8000`
+- `AIR_KOREA_MCP_PATH`: 기본값 `/mcp`
 
 예시:
 
 ```bash
 export AIR_KOREA_SERVICE_KEY='your-decoded-service-key'
+```
+
+Streamable HTTP 기본 접속 주소:
+
+```text
+http://127.0.0.1:8000/mcp
 ```
 
 ## 설치
@@ -81,26 +91,37 @@ pip install -e .
 
 ## 실행
 
-stdio 서버로 실행:
+기본 실행은 Streamable HTTP transport 입니다.
 
 ```bash
-air-korea-mcp
+./scripts/run_http.sh
 ```
 
 또는:
 
 ```bash
-python -m air_korea_mcp
+AIR_KOREA_MCP_TRANSPORT=streamable-http python -m air_korea_mcp
 ```
 
-리눅스 실행 스크립트:
+기본 엔드포인트:
+
+```text
+http://127.0.0.1:8000/mcp
+```
+
+예를 들어 Claude Code에서는:
 
 ```bash
-export AIR_KOREA_SERVICE_KEY='your-decoded-service-key'
+claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
+```
+
+stdio가 필요하면 별도 스크립트를 사용합니다.
+
+```bash
 ./scripts/run_stdio.sh
 ```
 
-`.env` 파일이 있으면 `scripts/run_stdio.sh`가 함께 읽습니다.
+`.env` 파일이 있으면 `scripts/run_http.sh`와 `scripts/run_stdio.sh`가 함께 읽습니다.
 
 `.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
 
