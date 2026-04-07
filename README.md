@@ -102,6 +102,13 @@ export AIR_KOREA_SERVICE_KEY='your-decoded-service-key'
 
 `.env` 파일이 있으면 `scripts/run_stdio.sh`가 함께 읽습니다.
 
+`.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
+
+중요:
+- `scripts/run_stdio.sh`는 사람이 터미널에서 직접 쓰는 CLI가 아닙니다.
+- MCP 클라이언트가 stdio로 붙어야 합니다.
+- 일반 터미널에서 실행 후 Enter를 누르면 빈 줄이 stdin으로 들어가서 `Invalid JSON: EOF while parsing a value` 같은 오류가 납니다.
+
 ## 테스트
 
 ```bash
