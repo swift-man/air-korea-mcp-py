@@ -62,6 +62,8 @@ SOLID 관점에서 책임을 다음처럼 나눴습니다.
 - `AIR_KOREA_MCP_HOST`: 기본값 `127.0.0.1`
 - `AIR_KOREA_MCP_PORT`: 기본값 `8000`
 - `AIR_KOREA_MCP_PATH`: 기본값 `/mcp`
+- `AIR_KOREA_MCP_ALLOWED_HOSTS`: 쉼표 구분 Host 허용 목록
+- `AIR_KOREA_MCP_ALLOWED_ORIGINS`: 쉼표 구분 Origin 허용 목록
 
 예시:
 
@@ -74,6 +76,20 @@ Streamable HTTP 기본 접속 주소:
 ```text
 http://127.0.0.1:8000/mcp
 ```
+
+내부망 다른 컴퓨터에서 붙을 때 예시:
+
+```bash
+AIR_KOREA_MCP_HOST='0.0.0.0'
+AIR_KOREA_MCP_PORT='8021'
+AIR_KOREA_MCP_ALLOWED_HOSTS='192.168.1.218:*,127.0.0.1:*,localhost:*'
+AIR_KOREA_MCP_ALLOWED_ORIGINS='http://127.0.0.1:*,http://localhost:*'
+```
+
+설명:
+- `AIR_KOREA_MCP_HOST=0.0.0.0` 는 외부 인터페이스 바인드용입니다.
+- `AIR_KOREA_MCP_ALLOWED_HOSTS` 는 서버가 신뢰할 `Host` 헤더 목록입니다.
+- 브라우저 기반 클라이언트면 `AIR_KOREA_MCP_ALLOWED_ORIGINS` 도 함께 맞춰두는 편이 안전합니다.
 
 ## 설치
 
@@ -142,9 +158,11 @@ nano .env
 
 ```bash
 AIR_KOREA_SERVICE_KEY=your-service-key
-AIR_KOREA_MCP_HOST=127.0.0.1
-AIR_KOREA_MCP_PORT=8000
+AIR_KOREA_MCP_HOST=0.0.0.0
+AIR_KOREA_MCP_PORT=8021
 AIR_KOREA_MCP_PATH=/mcp
+AIR_KOREA_MCP_ALLOWED_HOSTS=192.168.1.218:*,127.0.0.1:*,localhost:*
+AIR_KOREA_MCP_ALLOWED_ORIGINS=http://127.0.0.1:*,http://localhost:*
 ```
 
 유닛 파일 등록:
