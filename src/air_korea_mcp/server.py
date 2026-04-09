@@ -92,7 +92,7 @@ def get_sido_measurements(
     num_of_rows: int = 100,
     version: str = "1.0",
 ) -> dict:
-    """Get real-time measurements for all stations in a province or metro area."""
+    """Get real-time measurements for a 시도 or a uniquely resolvable lower-level location."""
     return get_service().get_sido_measurements(
         sido_name=sido_name,
         page_no=page_no,

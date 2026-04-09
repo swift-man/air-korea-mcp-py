@@ -34,6 +34,17 @@ class AirKoreaServiceTests(unittest.TestCase):
             result["request_params"],
         )
 
+    def test_get_sido_measurements_resolves_unique_lower_level_location(self):
+        result = self.service.get_sido_measurements("우면동", page_no=1, num_of_rows=5, version="1.0")
+
+        self.assertEqual("서울", result["request_params"]["sidoName"])
+
+    def test_get_sido_measurements_rejects_ambiguous_lower_level_location(self):
+        with self.assertRaises(AirKoreaError) as context:
+            self.service.get_sido_measurements("삼성동")
+
+        self.assertIn("ambiguous", str(context.exception))
+
     def test_get_station_measurements_rejects_blank_station_name(self):
         with self.assertRaises(AirKoreaError):
             self.service.get_station_measurements("   ")

@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol
 
-from .constants import DEFAULT_RETURN_TYPE, VALID_DATA_TERMS, VALID_INFORM_CODES, VALID_SIDO_NAMES
+from .constants import DEFAULT_RETURN_TYPE, VALID_DATA_TERMS, VALID_INFORM_CODES
 from .gateway import AirKoreaGateway
+from .location_resolution import resolve_sido_name
 from .validation import require_text, validate_choice, validate_optional_iso_date, validate_positive_int
 
 
@@ -147,8 +148,7 @@ class AirKoreaService:
         num_of_rows: int = 100,
         version: str = "1.0",
     ) -> Dict[str, Any]:
-        normalized_sido = require_text("sido_name", sido_name)
-        validate_choice("sido_name", normalized_sido, VALID_SIDO_NAMES)
+        normalized_sido = resolve_sido_name(require_text("sido_name", sido_name))
         validate_positive_int("page_no", page_no)
         validate_positive_int("num_of_rows", num_of_rows)
         return self.gateway.request(

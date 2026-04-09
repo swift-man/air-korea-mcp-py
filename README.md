@@ -142,6 +142,17 @@ claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 
 즉 예보 응답의 `imageUrl1`~`imageUrl9`, `informData`, `informGrade` 같은 필드도 누락 없이 `api_payload`와 `items`에서 모두 확인할 수 있습니다.
 
+## 지역명 해석
+
+`get_sido_measurements`는 이제 시도명뿐 아니라 고유하게 해석 가능한 하위 행정구역도 받을 수 있습니다.
+
+- 직접 시도명: `서울`, `경기`
+- 시도 별칭: `서울특별시`, `경기도`, `제주특별자치도`
+- 고유 하위 지역: `우면동` -> `서울`
+- 조합 입력: `서초구 우면동` -> `서울`
+
+단, `삼성동`처럼 여러 시도에 걸쳐 중복되는 이름은 자동으로 하나를 고르지 않고 모호성 오류를 반환합니다.
+
 ## systemd
 
 Streamable HTTP 서버라서 `systemd` 백그라운드 서비스 등록이 가능합니다.
