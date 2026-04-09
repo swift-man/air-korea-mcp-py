@@ -4,6 +4,7 @@ from typing import Dict, Iterable, List, Sequence, Set
 
 from .constants import VALID_SIDO_NAME_OPTIONS
 from .exceptions import AirKoreaError
+from .location_guidance_data import AMBIGUOUS_LOCATION_GUIDANCE_INDEX
 from .location_index_data import LOWER_LEVEL_REGION_INDEX
 
 SIDO_ALIAS_MAP: Dict[str, str] = {
@@ -55,6 +56,7 @@ SIDO_ALIAS_MAP: Dict[str, str] = {
 }
 
 SUPPORTED_LOCATION_EXAMPLES = ("서울", "서울시", "서울특별시", "우면동", "서초구 우면동")
+LOWER_LEVEL_SUFFIXES = ("동", "읍", "면", "리", "가", "구", "군", "시")
 
 
 def resolve_sido_name(location_name: str) -> str:
@@ -102,7 +104,7 @@ def collect_token_candidates(tokens: Sequence[str]) -> List[List[str]]:
         if direct is not None:
             return [[direct]]
 
-        candidates = LOWER_LEVEL_REGION_INDEX.get(token)
+        candidates = LOWER_LEVEL_REGION_INDEX.get(token) or collect_suffix_candidates(token)
         if candidates:
             token_candidates.append(candidates)
     return token_candidates
@@ -126,9 +128,11 @@ def resolve_candidate_list(location_name: str, candidates: Sequence[str]) -> str
         return unique_candidates[0]
 
     candidate_text = ", ".join(unique_candidates)
-    raise AirKoreaError(
-        f"sido_name '{location_name}' is ambiguous. Use one of these top-level regions explicitly: {candidate_text}"
-    )
+    guidance = build_ambiguous_location_guidance(location_name=location_name, candidates=unique_candidates)
+    message = f"sido_name '{location_name}' is ambiguous. Use one of these top-level regions explicitly: {candidate_text}"
+    if guidance:
+        message = f"{message}. To disambiguate, try one of: {guidance}"
+    raise AirKoreaError(message)
 
 
 def build_unsupported_location_message(location_name: str) -> str:
@@ -140,3 +144,23 @@ def build_unsupported_location_message(location_name: str) -> str:
         f"Use one of these top-level regions: {allowed}. "
         f"You can also enter a uniquely resolvable Korean lower-level location such as: {examples}"
     )
+
+
+def collect_suffix_candidates(token: str) -> List[str]:
+    merged_candidates: Set[str] = set()
+    for suffix in LOWER_LEVEL_SUFFIXES:
+        candidates = LOWER_LEVEL_REGION_INDEX.get(f"{token}{suffix}")
+        if candidates:
+            merged_candidates.update(candidates)
+    return sorted(merged_candidates)
+
+
+def build_ambiguous_location_guidance(location_name: str, candidates: Sequence[str]) -> str:
+    guidance_index = AMBIGUOUS_LOCATION_GUIDANCE_INDEX.get(location_name, {})
+    examples: List[str] = []
+    for candidate in candidates:
+        full_names = guidance_index.get(candidate, [])
+        if not full_names:
+            continue
+        examples.append(f"{candidate}: {full_names[0]}")
+    return "; ".join(examples)

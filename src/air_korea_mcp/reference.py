@@ -32,6 +32,7 @@ def build_reference_payload() -> Dict[str, Any]:
             "supports_sido_aliases": True,
             "supports_unique_lower_level_locations": True,
             "ambiguous_lower_level_locations_raise_error": True,
+            "ambiguous_lower_level_locations_include_clarifying_examples": True,
             "known_sido_alias_count": len(SIDO_ALIAS_MAP),
             "supported_location_examples": list(SUPPORTED_LOCATION_EXAMPLES),
             "unsupported_location_note": "Air Korea regional queries support South Korea regions only.",

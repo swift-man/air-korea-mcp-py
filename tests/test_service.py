@@ -40,11 +40,18 @@ class AirKoreaServiceTests(unittest.TestCase):
 
         self.assertEqual("서울", result["request_params"]["sidoName"])
 
+    def test_get_sido_measurements_resolves_lower_level_location_without_suffix(self):
+        result = self.service.get_sido_measurements("수내", page_no=1, num_of_rows=5, version="1.0")
+
+        self.assertEqual("경기", result["request_params"]["sidoName"])
+
     def test_get_sido_measurements_rejects_ambiguous_lower_level_location(self):
         with self.assertRaises(AirKoreaError) as context:
             self.service.get_sido_measurements("삼성동")
 
-        self.assertIn("ambiguous", str(context.exception))
+        message = str(context.exception)
+        self.assertIn("ambiguous", message)
+        self.assertIn("서울특별시 강남구 삼성동", message)
 
     def test_get_sido_measurements_rejects_unsupported_foreign_location_with_guidance(self):
         with self.assertRaises(AirKoreaError) as context:
