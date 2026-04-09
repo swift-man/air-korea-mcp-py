@@ -68,14 +68,11 @@ class AirKoreaService:
         inform_code = inform_code.upper()
         validate_choice("inform_code", inform_code, VALID_INFORM_CODES)
         validate_optional_iso_date("search_date", search_date)
-        validate_positive_int("page_no", page_no)
-        validate_positive_int("num_of_rows", num_of_rows)
-        return self.gateway.request(
+        return self._request_with_paging(
             "getMinuDustFrcstDspth",
-            {
-                "returnType": DEFAULT_RETURN_TYPE,
-                "pageNo": page_no,
-                "numOfRows": num_of_rows,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+            params={
                 "searchDate": search_date,
                 "InformCode": inform_code,
             },
@@ -88,14 +85,11 @@ class AirKoreaService:
         num_of_rows: int = 100,
     ) -> Dict[str, Any]:
         validate_optional_iso_date("search_date", search_date)
-        validate_positive_int("page_no", page_no)
-        validate_positive_int("num_of_rows", num_of_rows)
-        return self.gateway.request(
+        return self._request_with_paging(
             "getMinuDustWeekFrcstDspth",
-            {
-                "returnType": DEFAULT_RETURN_TYPE,
-                "pageNo": page_no,
-                "numOfRows": num_of_rows,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+            params={
                 "searchDate": search_date,
             },
         )
@@ -111,14 +105,11 @@ class AirKoreaService:
         normalized_station = require_text("station_name", station_name)
         normalized_data_term = data_term.upper()
         validate_choice("data_term", normalized_data_term, VALID_DATA_TERMS)
-        validate_positive_int("page_no", page_no)
-        validate_positive_int("num_of_rows", num_of_rows)
-        return self.gateway.request(
+        return self._request_with_paging(
             "getMsrstnAcctoRltmMesureDnsty",
-            {
-                "returnType": DEFAULT_RETURN_TYPE,
-                "pageNo": page_no,
-                "numOfRows": num_of_rows,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+            params={
                 "stationName": normalized_station,
                 "dataTerm": normalized_data_term,
                 "ver": version,
@@ -130,15 +121,11 @@ class AirKoreaService:
         page_no: int = 1,
         num_of_rows: int = 100,
     ) -> Dict[str, Any]:
-        validate_positive_int("page_no", page_no)
-        validate_positive_int("num_of_rows", num_of_rows)
-        return self.gateway.request(
+        return self._request_with_paging(
             "getUnityAirEnvrnIdexSnstiveAboveMsrstnList",
-            {
-                "returnType": DEFAULT_RETURN_TYPE,
-                "pageNo": page_no,
-                "numOfRows": num_of_rows,
-            },
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+            params={},
         )
 
     def get_sido_measurements(
@@ -149,15 +136,30 @@ class AirKoreaService:
         version: str = "1.0",
     ) -> Dict[str, Any]:
         normalized_sido = resolve_sido_name(require_text("sido_name", sido_name))
-        validate_positive_int("page_no", page_no)
-        validate_positive_int("num_of_rows", num_of_rows)
-        return self.gateway.request(
+        return self._request_with_paging(
             "getCtprvnRltmMesureDnsty",
-            {
-                "returnType": DEFAULT_RETURN_TYPE,
-                "pageNo": page_no,
-                "numOfRows": num_of_rows,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+            params={
                 "sidoName": normalized_sido,
                 "ver": version,
             },
         )
+
+    def _request_with_paging(
+        self,
+        endpoint: str,
+        *,
+        page_no: int,
+        num_of_rows: int,
+        params: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        validate_positive_int("page_no", page_no)
+        validate_positive_int("num_of_rows", num_of_rows)
+        request_params = {
+            "returnType": DEFAULT_RETURN_TYPE,
+            "pageNo": page_no,
+            "numOfRows": num_of_rows,
+            **params,
+        }
+        return self.gateway.request(endpoint, request_params)

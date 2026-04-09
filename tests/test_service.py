@@ -1,5 +1,6 @@
 import unittest
 
+from air_korea_mcp.constants import VALID_DATA_TERM_OPTIONS, VALID_SIDO_NAME_OPTIONS
 from air_korea_mcp.exceptions import AirKoreaError
 from air_korea_mcp.reference import build_reference_payload
 from air_korea_mcp.service import AirKoreaService
@@ -61,6 +62,8 @@ class AirKoreaServiceTests(unittest.TestCase):
 
         self.assertEqual("한국환경공단_에어코리아_대기오염정보", payload["dataset"])
         self.assertEqual(5, len(payload["tools"]))
+        self.assertEqual(list(VALID_DATA_TERM_OPTIONS), payload["valid_data_terms"])
+        self.assertEqual(list(VALID_SIDO_NAME_OPTIONS), payload["valid_sido_names"])
 
 
 if __name__ == "__main__":

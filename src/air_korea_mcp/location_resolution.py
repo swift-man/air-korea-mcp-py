@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, List, Sequence, Set
 
-from .constants import VALID_SIDO_NAMES
+from .constants import VALID_SIDO_NAME_OPTIONS
 from .exceptions import AirKoreaError
 from .location_index_data import LOWER_LEVEL_REGION_INDEX
 
@@ -79,7 +79,7 @@ def resolve_sido_name(location_name: str) -> str:
         merged_candidates = sorted({candidate for candidates in token_candidates for candidate in candidates})
         return resolve_candidate_list(location_name=normalized, candidates=merged_candidates)
 
-    allowed = ", ".join(sorted(VALID_SIDO_NAMES))
+    allowed = ", ".join(VALID_SIDO_NAME_OPTIONS)
     raise AirKoreaError(
         "sido_name must be a valid 시도 name or a uniquely resolvable lower-level location. "
         f"Known top-level values: {allowed}"

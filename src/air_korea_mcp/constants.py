@@ -8,9 +8,9 @@ DATASET_URL = "https://www.data.go.kr/data/15073861/openapi.do"
 DEFAULT_TIMEOUT_SECONDS = 15.0
 DEFAULT_RETURN_TYPE = "json"
 
-VALID_DATA_TERMS = {"DAILY", "MONTH", "3MONTH"}
+VALID_DATA_TERM_OPTIONS = ("DAILY", "MONTH", "3MONTH")
 VALID_INFORM_CODES = {"PM10", "PM25", "O3"}
-VALID_SIDO_NAMES = {
+VALID_SIDO_NAME_OPTIONS = (
     "전국",
     "서울",
     "부산",
@@ -29,7 +29,9 @@ VALID_SIDO_NAMES = {
     "경남",
     "제주",
     "세종",
-}
+)
+VALID_DATA_TERMS = frozenset(VALID_DATA_TERM_OPTIONS)
+VALID_SIDO_NAMES = frozenset(VALID_SIDO_NAME_OPTIONS)
 
 
 @dataclass(frozen=True)
