@@ -181,6 +181,23 @@ sudo systemctl stop air-korea-mcp
 sudo systemctl restart air-korea-mcp
 ```
 
+업데이트 후 재시작:
+
+```bash
+cd /opt/air-korea-mcp-py
+git pull
+source .venv/bin/activate
+pip install -e .
+sudo systemctl restart air-korea-mcp
+sudo systemctl status air-korea-mcp
+```
+
+`AGENTS.md` 변경 시:
+- `AGENTS.md`는 MCP 서버 런타임이 아니라 에이전트 작업 규칙 파일입니다.
+- 그래서 `AGENTS.md`만 바뀐 경우에는 `sudo systemctl restart air-korea-mcp`가 필수는 아닙니다.
+- 대신 새 규칙을 반영하려면 Codex, Claude Code 같은 에이전트 세션을 다시 시작하는 편이 맞습니다.
+- 서버 코드도 함께 바뀌었다면 위 재시작 절차를 그대로 실행하면 됩니다.
+
 ## 테스트
 
 ```bash

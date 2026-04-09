@@ -55,6 +55,8 @@ Follow SOLID boundaries when making changes.
 - `scripts/run_http.sh` is the supported launch path for local and deployed usage.
 - `deploy/systemd/air-korea-mcp.service.example` should remain aligned with `scripts/run_http.sh`.
 - `.env.example` must reflect the actually supported runtime variables.
+- A change to `AGENTS.md` does not require restarting the MCP server by itself.
+- If `AGENTS.md` changes, restart the coding-agent session or client so the new instructions are picked up.
 
 ## Testing
 
