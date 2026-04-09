@@ -11,7 +11,7 @@ from .constants import (
     VALID_INFORM_CODES,
     VALID_SIDO_NAME_OPTIONS,
 )
-from .location_resolution import SIDO_ALIAS_MAP
+from .location_resolution import SIDO_ALIAS_MAP, SUPPORTED_LOCATION_EXAMPLES
 
 
 def build_reference_payload() -> Dict[str, Any]:
@@ -33,6 +33,8 @@ def build_reference_payload() -> Dict[str, Any]:
             "supports_unique_lower_level_locations": True,
             "ambiguous_lower_level_locations_raise_error": True,
             "known_sido_alias_count": len(SIDO_ALIAS_MAP),
+            "supported_location_examples": list(SUPPORTED_LOCATION_EXAMPLES),
+            "unsupported_location_note": "Air Korea regional queries support South Korea regions only.",
         },
         "tools": [
             {

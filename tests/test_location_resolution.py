@@ -20,6 +20,15 @@ class LocationResolutionTests(unittest.TestCase):
 
         self.assertIn("ambiguous", str(context.exception))
 
+    def test_raise_with_guidance_for_unsupported_foreign_location(self):
+        with self.assertRaises(AirKoreaError) as context:
+            resolve_sido_name("도쿄")
+
+        message = str(context.exception)
+        self.assertIn("not supported", message)
+        self.assertIn("South Korea regions only", message)
+        self.assertIn("우면동", message)
+
 
 if __name__ == "__main__":
     unittest.main()

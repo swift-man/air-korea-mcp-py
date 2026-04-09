@@ -54,6 +54,8 @@ SIDO_ALIAS_MAP: Dict[str, str] = {
     "전국": "전국",
 }
 
+SUPPORTED_LOCATION_EXAMPLES = ("서울", "서울시", "서울특별시", "우면동", "서초구 우면동")
+
 
 def resolve_sido_name(location_name: str) -> str:
     normalized = normalize_location_name(location_name)
@@ -79,11 +81,7 @@ def resolve_sido_name(location_name: str) -> str:
         merged_candidates = sorted({candidate for candidates in token_candidates for candidate in candidates})
         return resolve_candidate_list(location_name=normalized, candidates=merged_candidates)
 
-    allowed = ", ".join(VALID_SIDO_NAME_OPTIONS)
-    raise AirKoreaError(
-        "sido_name must be a valid 시도 name or a uniquely resolvable lower-level location. "
-        f"Known top-level values: {allowed}"
-    )
+    raise AirKoreaError(build_unsupported_location_message(normalized))
 
 
 def normalize_location_name(value: str) -> str:
@@ -130,4 +128,15 @@ def resolve_candidate_list(location_name: str, candidates: Sequence[str]) -> str
     candidate_text = ", ".join(unique_candidates)
     raise AirKoreaError(
         f"sido_name '{location_name}' is ambiguous. Use one of these top-level regions explicitly: {candidate_text}"
+    )
+
+
+def build_unsupported_location_message(location_name: str) -> str:
+    allowed = ", ".join(VALID_SIDO_NAME_OPTIONS)
+    examples = ", ".join(SUPPORTED_LOCATION_EXAMPLES)
+    return (
+        f"sido_name '{location_name}' is not supported. "
+        "Air Korea regional queries support South Korea regions only. "
+        f"Use one of these top-level regions: {allowed}. "
+        f"You can also enter a uniquely resolvable Korean lower-level location such as: {examples}"
     )

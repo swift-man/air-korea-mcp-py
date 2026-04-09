@@ -46,6 +46,14 @@ class AirKoreaServiceTests(unittest.TestCase):
 
         self.assertIn("ambiguous", str(context.exception))
 
+    def test_get_sido_measurements_rejects_unsupported_foreign_location_with_guidance(self):
+        with self.assertRaises(AirKoreaError) as context:
+            self.service.get_sido_measurements("도쿄")
+
+        message = str(context.exception)
+        self.assertIn("not supported", message)
+        self.assertIn("South Korea regions only", message)
+
     def test_get_station_measurements_rejects_blank_station_name(self):
         with self.assertRaises(AirKoreaError):
             self.service.get_station_measurements("   ")
