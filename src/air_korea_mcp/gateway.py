@@ -61,7 +61,8 @@ def normalize_api_payload(
     status_code: int,
     payload: Mapping[str, Any],
 ) -> Dict[str, Any]:
-    response = payload.get("response", {})
+    plain_payload = to_plain_data(payload)
+    response = plain_payload.get("response", {})
     header = response.get("header", {}) or {}
     body = response.get("body", {}) or {}
 
@@ -70,20 +71,25 @@ def normalize_api_payload(
     if result_code and result_code != "00":
         raise AirKoreaError(f"Air Korea API error {result_code}: {result_message}")
 
+    normalized_body = normalize_response_body(body)
+
     return {
         "dataset": DATASET_NAME,
         "dataset_url": DATASET_URL,
         "endpoint": endpoint,
         "http_status": status_code,
         "request_params": dict(query_params),
+        "api_payload": plain_payload,
         "result": {
             "code": result_code or None,
             "message": result_message or None,
         },
-        "page_no": body.get("pageNo"),
-        "num_of_rows": body.get("numOfRows"),
-        "total_count": body.get("totalCount"),
-        "items": normalize_items(body.get("items")),
+        "response_header": header,
+        "response_body": normalized_body,
+        "page_no": normalized_body.get("pageNo"),
+        "num_of_rows": normalized_body.get("numOfRows"),
+        "total_count": normalized_body.get("totalCount"),
+        "items": normalized_body.get("items", []),
     }
 
 
@@ -102,3 +108,17 @@ def normalize_items(items: Any) -> List[Any]:
             return [nested]
         return [items]
     return [items]
+
+
+def normalize_response_body(body: Mapping[str, Any]) -> Dict[str, Any]:
+    normalized_body = dict(body)
+    normalized_body["items"] = normalize_items(body.get("items"))
+    return normalized_body
+
+
+def to_plain_data(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: to_plain_data(nested) for key, nested in value.items()}
+    if isinstance(value, list):
+        return [to_plain_data(item) for item in value]
+    return value

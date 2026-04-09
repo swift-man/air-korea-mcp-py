@@ -13,6 +13,8 @@
 - `get_bad_khai_stations`
 - `get_sido_measurements`
 
+공공데이터포털 상세기능 기준으로 현재 데이터셋의 OpenAPI 오퍼레이션 5개를 모두 매핑했습니다.
+
 추가 리소스:
 - `airkorea://reference`
 
@@ -128,6 +130,17 @@ claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 `.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽고, 변수들을 MCP 프로세스에 export합니다.
 
 `.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
+
+## 응답 구조
+
+각 도구 응답은 편의 필드와 원본 API 응답을 함께 돌려줍니다.
+
+- `items`: LLM이 바로 쓰기 쉽게 정규화한 목록
+- `response_header`: Air Korea 원본 `response.header`
+- `response_body`: Air Korea 원본 `response.body`를 유지하면서 `items`만 리스트로 정규화한 값
+- `api_payload`: Air Korea API가 내려준 전체 JSON payload
+
+즉 예보 응답의 `imageUrl1`~`imageUrl9`, `informData`, `informGrade` 같은 필드도 누락 없이 `api_payload`와 `items`에서 모두 확인할 수 있습니다.
 
 ## systemd
 
