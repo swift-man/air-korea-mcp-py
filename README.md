@@ -125,7 +125,7 @@ http://127.0.0.1:8000/mcp
 claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 ```
 
-`.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽습니다.
+`.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽고, 변수들을 MCP 프로세스에 export합니다.
 
 `.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
 

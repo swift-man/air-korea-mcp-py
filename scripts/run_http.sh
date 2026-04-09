@@ -14,8 +14,11 @@ fi
 source "${VENV_DIR}/bin/activate"
 
 if [[ -f "${ENV_FILE}" ]]; then
+  # Auto-export variables defined in .env so the MCP process can read them.
+  set -a
   # shellcheck disable=SC1090
   source "${ENV_FILE}"
+  set +a
 fi
 
 if [[ -z "${AIR_KOREA_SERVICE_KEY:-}" && -z "${AIR_KOREA_SERVICE_KEY_ENCODED:-}" ]]; then
