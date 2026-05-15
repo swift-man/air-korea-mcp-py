@@ -1,0 +1,48 @@
+version: 1
+
+review:
+  include:
+    - "src/**/*.py"
+    - "tests/**/*.py"
+    - "scripts/**/*.sh"
+    - "deploy/systemd/**/*.example"
+    - "pyproject.toml"
+    - ".env.example"
+    - ".coderabbit.yaml"
+    - "README.md"
+    - "AGENTS.md"
+
+  exclude:
+    # dependency / virtualenv / cache
+    - ".venv/**"
+    - "__pycache__/**"
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - ".mypy_cache/**"
+    - ".pytest_cache/**"
+    - ".ruff_cache/**"
+
+    # build output / packaging
+    - "build/**"
+    - "dist/**"
+    - "**/*.egg-info/**"
+    - "htmlcov/**"
+    - ".coverage"
+
+    # generated location snapshot data
+    - "src/air_korea_mcp/location_index_data.py"
+    - "src/air_korea_mcp/location_guidance_data.py"
+
+    # future dependency vendors
+    - "vendor/**"
+    - "node_modules/**"
+
+  always_review:
+    - ".reviewbot.yml"
+    - ".coderabbit.yaml"
+    - "AGENTS.md"
+    - "README.md"
+    - "pyproject.toml"
+    - ".env.example"
+    - "scripts/run_http.sh"
+    - "deploy/systemd/air-korea-mcp.service.example"
