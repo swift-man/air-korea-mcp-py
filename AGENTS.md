@@ -1,10 +1,11 @@
 # AGENTS.md
 
-This repository hosts a Python MCP server for the Air Korea public API.
+This repository hosts Python MCP and REST API interfaces for the Air Korea public API.
 
 ## Product Scope
 
-- Support Streamable HTTP MCP only.
+- Support Streamable HTTP MCP only for the MCP interface.
+- Support FastAPI REST as a separate HTTP interface that reuses the service layer.
 - Do not reintroduce `stdio`, `sse`, or transport-selection features unless explicitly requested.
 - Keep the public MCP surface focused on Air Korea data retrieval tools and the reference resource.
 
@@ -16,6 +17,11 @@ Follow SOLID boundaries when making changes.
   - MCP registration and process startup only.
   - Keep tool handlers thin.
   - No request building, validation, or response parsing here.
+
+- `src/air_korea_mcp/rest_api.py`
+  - FastAPI REST registration and process startup only.
+  - Keep route handlers thin.
+  - Reuse `AirKoreaService`; do not duplicate API request construction or validation here.
 
 - `src/air_korea_mcp/bootstrap.py`
   - Composition root only.
@@ -36,6 +42,9 @@ Follow SOLID boundaries when making changes.
 
 - `src/air_korea_mcp/runtime.py`
   - Streamable HTTP runtime config only.
+
+- `src/air_korea_mcp/rest_runtime.py`
+  - FastAPI REST runtime config only.
 
 - `src/air_korea_mcp/validation.py`
   - Shared validation helpers only.
@@ -67,6 +76,7 @@ Follow SOLID boundaries when making changes.
 ## Runtime Rules
 
 - `scripts/run_http.sh` is the supported launch path for local and deployed usage.
+- `scripts/run_rest_api.sh` is the supported launch path for the FastAPI REST API.
 - `deploy/systemd/air-korea-mcp.service.example` should remain aligned with `scripts/run_http.sh`.
 - `.env.example` must reflect the actually supported runtime variables.
 - A change to `AGENTS.md` does not require restarting the MCP server by itself.
@@ -96,6 +106,7 @@ Run these after meaningful changes:
 
 ```bash
 bash -n scripts/run_http.sh
+bash -n scripts/run_rest_api.sh
 python3 -m compileall src tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
