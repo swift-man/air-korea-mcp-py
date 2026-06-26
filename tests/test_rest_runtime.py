@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest.mock import patch
 
 from air_korea_mcp.exceptions import AirKoreaError
 from air_korea_mcp.rest_runtime import RestApiRuntimeConfig
@@ -7,7 +8,10 @@ from air_korea_mcp.rest_runtime import RestApiRuntimeConfig
 
 class RestApiRuntimeConfigTests(unittest.TestCase):
     def test_defaults(self):
-        config = RestApiRuntimeConfig.from_env()
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("AIR_KOREA_REST_HOST", None)
+            os.environ.pop("AIR_KOREA_REST_PORT", None)
+            config = RestApiRuntimeConfig.from_env()
 
         self.assertEqual("127.0.0.1", config.host)
         self.assertEqual(8010, config.port)

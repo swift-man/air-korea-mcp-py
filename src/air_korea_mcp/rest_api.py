@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from . import __version__
 from .bootstrap import create_air_korea_service
 from .constants import DATASET_URL
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaError, AirKoreaGatewayError
 from .reference import build_reference_payload
 from .rest_runtime import RestApiRuntimeConfig
 from .service import AirKoreaServiceProtocol
@@ -31,7 +31,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(AirKoreaError)
     def handle_air_korea_error(_, exc: AirKoreaError) -> JSONResponse:
-        return JSONResponse(status_code=400, content={"detail": str(exc)})
+        status_code = 502 if isinstance(exc, AirKoreaGatewayError) else 400
+        return JSONResponse(status_code=status_code, content={"detail": str(exc)})
 
     @app.get("/health", tags=["system"])
     def health() -> dict:

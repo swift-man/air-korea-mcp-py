@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, Protocol
 from urllib import error, parse, request
 
 from .constants import DATASET_NAME, DATASET_URL
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaGatewayError
 from .settings import AirKoreaSettings
 
 
@@ -35,14 +35,14 @@ class UrllibAirKoreaGateway:
         except error.HTTPError as exc:
             raw_body = exc.read().decode("utf-8", "replace")
             message = raw_body.strip() or exc.reason
-            raise AirKoreaError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
+            raise AirKoreaGatewayError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
         except error.URLError as exc:
-            raise AirKoreaError(f"Air Korea API request failed: {exc.reason}") from exc
+            raise AirKoreaGatewayError(f"Air Korea API request failed: {exc.reason}") from exc
 
         try:
             payload = json.loads(raw_body)
         except json.JSONDecodeError as exc:
-            raise AirKoreaError("Expected JSON from Air Korea API but received a different payload.") from exc
+            raise AirKoreaGatewayError("Expected JSON from Air Korea API but received a different payload.") from exc
 
         return normalize_api_payload(endpoint=endpoint, query_params=query_params, status_code=status_code, payload=payload)
 
@@ -69,7 +69,7 @@ def normalize_api_payload(
     result_code = str(header.get("resultCode", ""))
     result_message = str(header.get("resultMsg", ""))
     if result_code and result_code != "00":
-        raise AirKoreaError(f"Air Korea API error {result_code}: {result_message}")
+        raise AirKoreaGatewayError(f"Air Korea API error {result_code}: {result_message}")
 
     normalized_body = normalize_response_body(body)
 
