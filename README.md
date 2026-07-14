@@ -15,6 +15,10 @@
 - 공공데이터포털 `한국환경공단_에어코리아_대기오염정보`
 - 문서: <https://www.data.go.kr/data/15073861/openapi.do>
 
+프로젝트 문서:
+- [변경 이력](CHANGELOG.md)
+- [현재 버전](VERSION.txt)
+
 구현된 MCP 도구:
 - `get_air_quality_forecast`
 - `get_pm25_weekly_forecast`
