@@ -25,7 +25,7 @@ class RuntimeConfig:
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
         host = os.getenv("AIR_KOREA_MCP_HOST", DEFAULT_HOST).strip() or DEFAULT_HOST
-        port_raw = os.getenv("AIR_KOREA_MCP_PORT", str(DEFAULT_PORT)).strip()
+        port_raw = os.getenv("AIR_KOREA_MCP_PORT", str(DEFAULT_PORT)).strip() or str(DEFAULT_PORT)
         path = os.getenv("AIR_KOREA_MCP_PATH", DEFAULT_STREAMABLE_HTTP_PATH).strip() or DEFAULT_STREAMABLE_HTTP_PATH
         allowed_hosts = _split_csv_env("AIR_KOREA_MCP_ALLOWED_HOSTS")
         allowed_origins = _split_csv_env("AIR_KOREA_MCP_ALLOWED_ORIGINS")

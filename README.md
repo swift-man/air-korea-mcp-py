@@ -101,6 +101,12 @@ SOLID 관점에서 책임을 다음처럼 나눴습니다.
 - `AIR_KOREA_REST_HOST`: 기본값 `127.0.0.1`
 - `AIR_KOREA_REST_PORT`: 기본값 `8010`
 
+설정값 검증:
+- 서비스키는 앞뒤 공백을 제거하며, 공백만 입력된 키는 허용하지 않습니다.
+- `AIR_KOREA_API_BASE`는 호스트가 포함된 `http` 또는 `https` URL이어야 합니다.
+- `AIR_KOREA_TIMEOUT_SECONDS`는 `0`보다 큰 유한수여야 합니다.
+- MCP와 REST 포트가 비어 있으면 각각 기본 포트 `8000`, `8010`을 사용합니다.
+
 예시:
 
 ```bash

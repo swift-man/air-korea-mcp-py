@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from http import client as http_client
 from typing import Any, Dict, List, Mapping, Optional, Protocol
 from urllib import error, parse, request
 
@@ -33,13 +34,22 @@ class UrllibAirKoreaGateway:
                 raw_body = response.read().decode("utf-8", "replace")
                 status_code = response.status
         except error.HTTPError as exc:
-            raw_body = exc.read().decode("utf-8", "replace")
+            try:
+                raw_body = exc.read().decode("utf-8", "replace")
+            except (http_client.HTTPException, OSError) as read_exc:
+                raise AirKoreaGatewayError(
+                    f"Air Korea API returned HTTP {exc.code}, but its response body was interrupted."
+                ) from read_exc
             message = raw_body.strip() or exc.reason
             raise AirKoreaGatewayError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
         except error.URLError as exc:
             raise AirKoreaGatewayError(f"Air Korea API request failed: {exc.reason}") from exc
         except TimeoutError as exc:
             raise AirKoreaGatewayError("Air Korea API request timed out.") from exc
+        except http_client.HTTPException as exc:
+            raise AirKoreaGatewayError("Air Korea API response was interrupted.") from exc
+        except OSError as exc:
+            raise AirKoreaGatewayError(f"Air Korea API connection failed: {exc}") from exc
 
         try:
             payload = json.loads(raw_body)
@@ -75,8 +85,8 @@ def normalize_api_payload(
         raise AirKoreaGatewayError("Air Korea API response did not contain a response object.")
 
     response = require_mapping("response", response_value)
-    header = require_mapping("response.header", response.get("header") or {})
-    body = require_mapping("response.body", response.get("body") or {})
+    header = require_mapping("response.header", response["header"] if "header" in response else {})
+    body = require_mapping("response.body", response["body"] if "body" in response else {})
 
     result_code = str(header.get("resultCode", ""))
     result_message = str(header.get("resultMsg", ""))

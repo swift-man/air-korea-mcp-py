@@ -49,6 +49,19 @@ class RuntimeConfigTests(unittest.TestCase):
             with self.assertRaises(AirKoreaConfigurationError):
                 RuntimeConfig.from_env()
 
+    def test_empty_port_uses_default(self):
+        with patch.dict(os.environ, {"AIR_KOREA_MCP_PORT": "   "}, clear=False):
+            config = RuntimeConfig.from_env()
+
+        self.assertEqual(8000, config.port)
+
+    def test_out_of_range_port_raises(self):
+        for port in ("0", "65536"):
+            with self.subTest(port=port):
+                with patch.dict(os.environ, {"AIR_KOREA_MCP_PORT": port}, clear=False):
+                    with self.assertRaises(AirKoreaConfigurationError):
+                        RuntimeConfig.from_env()
+
     def test_apply_runtime_config(self):
         config = RuntimeConfig(host="0.0.0.0", port=9000, streamable_http_path="/air")
         mcp = DummyMcp()
