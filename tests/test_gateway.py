@@ -125,10 +125,33 @@ class GatewayNormalizationTests(unittest.TestCase):
     def test_non_object_header_and_body_raise_gateway_error(self):
         for field_name in ("header", "body"):
             with self.subTest(field_name=field_name):
-                payload = {"response": {"header": {}, "body": {}}}
+                payload = {
+                    "response": {
+                        "header": {"resultCode": "00"},
+                        "body": {},
+                    }
+                }
                 payload["response"][field_name] = []
 
                 with self.assertRaisesRegex(AirKoreaGatewayError, f"response.{field_name}"):
+                    normalize_api_payload(
+                        endpoint="getMinuDustFrcstDspth",
+                        query_params={},
+                        status_code=200,
+                        payload=payload,
+                    )
+
+    def test_missing_required_response_fields_raise_gateway_error(self):
+        cases = (
+            ({"response": {"body": {}}}, "response.header"),
+            ({"response": {"header": {}, "body": {}}}, "resultCode"),
+            ({"response": {"header": {"resultCode": "  "}, "body": {}}}, "resultCode"),
+            ({"response": {"header": {"resultCode": "00"}}}, "response.body"),
+        )
+
+        for payload, expected_message in cases:
+            with self.subTest(expected_message=expected_message):
+                with self.assertRaisesRegex(AirKoreaGatewayError, expected_message):
                     normalize_api_payload(
                         endpoint="getMinuDustFrcstDspth",
                         query_params={},
@@ -159,7 +182,6 @@ class GatewayNormalizationTests(unittest.TestCase):
         payload = {
             "response": {
                 "header": {"resultCode": "03", "resultMsg": "NO DATA"},
-                "body": {},
             }
         }
 

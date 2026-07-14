@@ -85,13 +85,21 @@ def normalize_api_payload(
         raise AirKoreaGatewayError("Air Korea API response did not contain a response object.")
 
     response = require_mapping("response", response_value)
-    header = require_mapping("response.header", response["header"] if "header" in response else {})
-    body = require_mapping("response.body", response["body"] if "body" in response else {})
+    if "header" not in response:
+        raise AirKoreaGatewayError("Air Korea API response did not contain response.header.")
+    header = require_mapping("response.header", response["header"])
 
-    result_code = str(header.get("resultCode", ""))
+    result_code_value = header.get("resultCode")
+    if result_code_value is None or not str(result_code_value).strip():
+        raise AirKoreaGatewayError("Air Korea API response.header did not contain resultCode.")
+    result_code = str(result_code_value).strip()
     result_message = str(header.get("resultMsg", ""))
-    if result_code and result_code != "00":
+    if result_code != "00":
         raise AirKoreaGatewayError(f"Air Korea API error {result_code}: {result_message}")
+
+    if "body" not in response:
+        raise AirKoreaGatewayError("Air Korea API success response did not contain response.body.")
+    body = require_mapping("response.body", response["body"])
 
     normalized_body = normalize_response_body(body)
 
@@ -103,7 +111,7 @@ def normalize_api_payload(
         "request_params": dict(query_params),
         "api_payload": plain_payload,
         "result": {
-            "code": result_code or None,
+            "code": result_code,
             "message": result_message or None,
         },
         "response_header": header,

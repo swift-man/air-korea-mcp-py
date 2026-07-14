@@ -44,7 +44,7 @@ class AirKoreaSettings:
         api_base = os.getenv("AIR_KOREA_API_BASE", API_BASE).strip().rstrip("/")
         try:
             parsed_api_base = parse.urlsplit(api_base)
-            parsed_api_base.port
+            _ = parsed_api_base.port
         except ValueError as exc:
             raise AirKoreaConfigurationError(
                 "AIR_KOREA_API_BASE must be a valid HTTP or HTTPS URL."
