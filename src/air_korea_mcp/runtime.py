@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaConfigurationError
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -25,7 +25,7 @@ class RuntimeConfig:
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
         host = os.getenv("AIR_KOREA_MCP_HOST", DEFAULT_HOST).strip() or DEFAULT_HOST
-        port_raw = os.getenv("AIR_KOREA_MCP_PORT", str(DEFAULT_PORT)).strip()
+        port_raw = os.getenv("AIR_KOREA_MCP_PORT", str(DEFAULT_PORT)).strip() or str(DEFAULT_PORT)
         path = os.getenv("AIR_KOREA_MCP_PATH", DEFAULT_STREAMABLE_HTTP_PATH).strip() or DEFAULT_STREAMABLE_HTTP_PATH
         allowed_hosts = _split_csv_env("AIR_KOREA_MCP_ALLOWED_HOSTS")
         allowed_origins = _split_csv_env("AIR_KOREA_MCP_ALLOWED_ORIGINS")
@@ -33,10 +33,10 @@ class RuntimeConfig:
         try:
             port = int(port_raw)
         except ValueError as exc:
-            raise AirKoreaError("AIR_KOREA_MCP_PORT must be an integer.") from exc
+            raise AirKoreaConfigurationError("AIR_KOREA_MCP_PORT must be an integer.") from exc
 
         if port < 1 or port > 65535:
-            raise AirKoreaError("AIR_KOREA_MCP_PORT must be between 1 and 65535.")
+            raise AirKoreaConfigurationError("AIR_KOREA_MCP_PORT must be between 1 and 65535.")
 
         if not path.startswith("/"):
             path = f"/{path}"

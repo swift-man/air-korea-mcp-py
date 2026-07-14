@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Protocol
+from http import client as http_client
+from typing import Any, Dict, List, Mapping, Optional, Protocol
 from urllib import error, parse, request
 
 from .constants import DATASET_NAME, DATASET_URL
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaGatewayError
 from .settings import AirKoreaSettings
 
 
@@ -33,16 +34,27 @@ class UrllibAirKoreaGateway:
                 raw_body = response.read().decode("utf-8", "replace")
                 status_code = response.status
         except error.HTTPError as exc:
-            raw_body = exc.read().decode("utf-8", "replace")
+            try:
+                raw_body = exc.read().decode("utf-8", "replace")
+            except (http_client.HTTPException, OSError) as read_exc:
+                raise AirKoreaGatewayError(
+                    f"Air Korea API returned HTTP {exc.code}, but its response body was interrupted."
+                ) from read_exc
             message = raw_body.strip() or exc.reason
-            raise AirKoreaError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
+            raise AirKoreaGatewayError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
         except error.URLError as exc:
-            raise AirKoreaError(f"Air Korea API request failed: {exc.reason}") from exc
+            raise AirKoreaGatewayError(f"Air Korea API request failed: {exc.reason}") from exc
+        except TimeoutError as exc:
+            raise AirKoreaGatewayError("Air Korea API request timed out.") from exc
+        except http_client.HTTPException as exc:
+            raise AirKoreaGatewayError("Air Korea API response was interrupted.") from exc
+        except OSError as exc:
+            raise AirKoreaGatewayError(f"Air Korea API connection failed: {exc}") from exc
 
         try:
             payload = json.loads(raw_body)
         except json.JSONDecodeError as exc:
-            raise AirKoreaError("Expected JSON from Air Korea API but received a different payload.") from exc
+            raise AirKoreaGatewayError("Expected JSON from Air Korea API but received a different payload.") from exc
 
         return normalize_api_payload(endpoint=endpoint, query_params=query_params, status_code=status_code, payload=payload)
 
@@ -59,17 +71,35 @@ def normalize_api_payload(
     endpoint: str,
     query_params: Mapping[str, Any],
     status_code: int,
-    payload: Mapping[str, Any],
+    payload: Any,
 ) -> Dict[str, Any]:
     plain_payload = to_plain_data(payload)
-    response = plain_payload.get("response", {})
-    header = response.get("header", {}) or {}
-    body = response.get("body", {}) or {}
+    if not isinstance(plain_payload, Mapping):
+        raise AirKoreaGatewayError("Air Korea API returned JSON that is not an object.")
 
-    result_code = str(header.get("resultCode", ""))
+    response_value = plain_payload.get("response")
+    if response_value is None:
+        portal_error = extract_portal_error(plain_payload)
+        if portal_error:
+            raise AirKoreaGatewayError(f"Air Korea API error: {portal_error}")
+        raise AirKoreaGatewayError("Air Korea API response did not contain a response object.")
+
+    response = require_mapping("response", response_value)
+    if "header" not in response:
+        raise AirKoreaGatewayError("Air Korea API response did not contain response.header.")
+    header = require_mapping("response.header", response["header"])
+
+    result_code_value = header.get("resultCode")
+    if result_code_value is None or not str(result_code_value).strip():
+        raise AirKoreaGatewayError("Air Korea API response.header did not contain resultCode.")
+    result_code = str(result_code_value).strip()
     result_message = str(header.get("resultMsg", ""))
-    if result_code and result_code != "00":
-        raise AirKoreaError(f"Air Korea API error {result_code}: {result_message}")
+    if result_code != "00":
+        raise AirKoreaGatewayError(f"Air Korea API error {result_code}: {result_message}")
+
+    if "body" not in response:
+        raise AirKoreaGatewayError("Air Korea API success response did not contain response.body.")
+    body = require_mapping("response.body", response["body"])
 
     normalized_body = normalize_response_body(body)
 
@@ -81,7 +111,7 @@ def normalize_api_payload(
         "request_params": dict(query_params),
         "api_payload": plain_payload,
         "result": {
-            "code": result_code or None,
+            "code": result_code,
             "message": result_message or None,
         },
         "response_header": header,
@@ -91,6 +121,29 @@ def normalize_api_payload(
         "total_count": normalized_body.get("totalCount"),
         "items": normalized_body.get("items", []),
     }
+
+
+def require_mapping(field_name: str, value: Any) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise AirKoreaGatewayError(f"Air Korea API field {field_name} must be an object.")
+    return value
+
+
+def extract_portal_error(payload: Mapping[str, Any]) -> Optional[str]:
+    service_response = payload.get("OpenAPI_ServiceResponse", payload)
+    if not isinstance(service_response, Mapping):
+        return None
+
+    header = service_response.get("cmmMsgHeader")
+    if not isinstance(header, Mapping):
+        return None
+
+    details = [
+        str(header[key]).strip()
+        for key in ("returnReasonCode", "returnAuthMsg", "errMsg")
+        if header.get(key) not in (None, "")
+    ]
+    return ": ".join(details) or None
 
 
 def normalize_items(items: Any) -> List[Any]:

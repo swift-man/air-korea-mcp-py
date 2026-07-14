@@ -1,10 +1,11 @@
 # air-korea-mcp
 
-한국환경공단 에어코리아 OpenAPI를 Streamable HTTP MCP 서버로 제공하는 파이썬 프로젝트입니다.
+한국환경공단 에어코리아 OpenAPI를 Streamable HTTP MCP 서버와 FastAPI REST API로 제공하는 파이썬 프로젝트입니다.
 
 이 저장소는 Air Korea 공공데이터를 LLM과 MCP 클라이언트가 바로 사용할 수 있도록 정리한 운영 지향 서버 구현입니다.
 
-- Streamable HTTP MCP 전용 서버
+- Streamable HTTP MCP 서버
+- FastAPI 기반 REST API
 - 공공데이터포털 기준 OpenAPI 오퍼레이션 5개 전체 매핑
 - Air Korea 원본 응답 payload 보존
 - 시도명, 시도 별칭, 하위 행정구역 입력 해석 지원
@@ -13,6 +14,10 @@
 대상 데이터셋:
 - 공공데이터포털 `한국환경공단_에어코리아_대기오염정보`
 - 문서: <https://www.data.go.kr/data/15073861/openapi.do>
+
+프로젝트 문서:
+- [변경 이력](CHANGELOG.md)
+- [현재 버전](VERSION.txt)
 
 구현된 MCP 도구:
 - `get_air_quality_forecast`
@@ -33,7 +38,16 @@
 - `서울`, `서울시`, `서울특별시`, `우면동`, `수내`, `분당구 수내` 같은 입력을 시도명으로 정규화할 수 있습니다.
 - `판교`, `삼성동`, `중앙동`처럼 모호한 지역명은 가능한 상위 지역과 다시 입력할 예시를 함께 안내합니다.
 
-## 왜 MCP 서버로 만들기 쉬운가
+## 제공 방식
+
+이 프로젝트는 같은 서비스 계층을 두 가지 인터페이스로 제공합니다.
+
+- MCP: LLM/MCP 클라이언트용 Streamable HTTP endpoint
+- REST API: 일반 HTTP 클라이언트용 FastAPI endpoint
+
+공공데이터포털 `https://www.data.go.kr/iim/api/selectAPIAcountView.do`는 서비스키로 호출하는 OpenAPI endpoint가 아니라 로그인 세션이 필요한 포털 계정/활용신청 화면입니다. 그래서 서버가 사용자 계정으로 대리 로그인하거나 트래픽/키 정보를 자동 조회하지 않습니다. 대신 REST API에서 계정 관리 화면으로 이동할 수 있는 안내 endpoint를 제공합니다.
+
+## 왜 MCP/REST 서버로 만들기 쉬운가
 
 이 API는 다음 특성 때문에 MCP 도구로 감싸기 적합합니다.
 
@@ -57,13 +71,16 @@
 SOLID 관점에서 책임을 다음처럼 나눴습니다.
 
 - `bootstrap.py`: composition root, settings와 gateway를 조립해서 service 생성
-- `settings.py`: 환경 변수와 런타임 설정 로딩
+- `settings.py`: Air Korea API 환경 설정 로딩
 - `validation.py`: 입력 검증
 - `gateway.py`: HTTP 전송과 Air Korea 응답 정규화
 - `service.py`: MCP 도구가 호출하는 유스케이스 계층
 - `server.py`: MCP 도구 등록
+- `rest_api.py`: FastAPI REST 라우트 등록
+- `runtime.py`: MCP Streamable HTTP 런타임 설정
+- `rest_runtime.py`: FastAPI REST 런타임 설정
 
-즉 서버 계층은 구체적인 HTTP 구현보다 서비스 추상화에 의존하고, 서비스는 게이트웨이를 주입받도록 분리했습니다.
+즉 MCP/REST 인터페이스 계층은 구체적인 Air Korea HTTP 구현보다 서비스 추상화에 의존하고, 서비스는 게이트웨이를 주입받도록 분리했습니다.
 
 ## 환경 변수
 
@@ -81,6 +98,14 @@ SOLID 관점에서 책임을 다음처럼 나눴습니다.
 - `AIR_KOREA_MCP_PATH`: 기본값 `/mcp`
 - `AIR_KOREA_MCP_ALLOWED_HOSTS`: 쉼표 구분 Host 허용 목록
 - `AIR_KOREA_MCP_ALLOWED_ORIGINS`: 쉼표 구분 Origin 허용 목록
+- `AIR_KOREA_REST_HOST`: 기본값 `127.0.0.1`
+- `AIR_KOREA_REST_PORT`: 기본값 `8010`
+
+설정값 검증:
+- 서비스키는 앞뒤 공백을 제거하며, 공백만 입력된 키는 허용하지 않습니다.
+- `AIR_KOREA_API_BASE`는 호스트가 포함된 `http` 또는 `https` URL이어야 합니다.
+- `AIR_KOREA_TIMEOUT_SECONDS`는 `0`보다 큰 유한수여야 합니다.
+- MCP와 REST 포트가 비어 있으면 각각 기본 포트 `8000`, `8010`을 사용합니다.
 
 예시:
 
@@ -116,7 +141,7 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-## 실행
+## MCP 실행
 
 이 프로젝트는 Streamable HTTP transport만 지원합니다.
 
@@ -144,7 +169,58 @@ claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 
 `.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽고, 변수들을 MCP 프로세스에 export합니다.
 
-`.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
+`.env` 예시는 [.env.example](.env.example)에 있습니다.
+
+## REST API 실행
+
+FastAPI REST 서버는 MCP 서버와 별도로 실행합니다.
+서비스키는 MCP와 동일하게 `AIR_KOREA_SERVICE_KEY` 또는 `AIR_KOREA_SERVICE_KEY_ENCODED`를 사용합니다.
+서버 시작 시 서비스키 설정을 검증하며, 설정이 없거나 잘못되면 요청을 받기 전에 시작을 중단합니다.
+
+```bash
+./scripts/run_rest_api.sh
+```
+
+또는:
+
+```bash
+air-korea-rest-api
+```
+
+기본 엔드포인트:
+
+```text
+http://127.0.0.1:8010
+```
+
+OpenAPI 문서:
+
+```text
+http://127.0.0.1:8010/docs
+```
+
+주요 REST endpoint:
+
+- `GET /health`
+- `GET /api/reference`
+- `GET /api/data-go-kr/account-view`
+- `GET /api/air-quality/forecast`
+- `GET /api/air-quality/pm25-weekly-forecast`
+- `GET /api/air-quality/station-measurements`
+- `GET /api/air-quality/bad-khai-stations`
+- `GET /api/air-quality/sido-measurements`
+
+예시:
+
+```bash
+curl 'http://127.0.0.1:8010/api/air-quality/sido-measurements?sido_name=수내'
+```
+
+공공데이터포털 계정/활용신청 화면 안내:
+
+```bash
+curl 'http://127.0.0.1:8010/api/data-go-kr/account-view'
+```
 
 ## 응답 구조
 
@@ -175,7 +251,7 @@ claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 Streamable HTTP 서버라서 `systemd` 백그라운드 서비스 등록이 가능합니다.
 
 예제 유닛 파일:
-- [air-korea-mcp.service.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/deploy/systemd/air-korea-mcp.service.example)
+- [air-korea-mcp.service.example](deploy/systemd/air-korea-mcp.service.example)
 
 기본 방식:
 - `systemd`는 `scripts/run_http.sh`를 실행합니다.
@@ -260,22 +336,10 @@ sudo systemctl status air-korea-mcp
 ## 테스트
 
 ```bash
+bash -n scripts/run_http.sh
+bash -n scripts/run_rest_api.sh
+python3 -m compileall src tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-```
-
-## Claude Desktop / Codex 예시
-
-```json
-{
-  "mcpServers": {
-    "air-korea": {
-      "command": "air-korea-mcp",
-      "env": {
-        "AIR_KOREA_SERVICE_KEY": "your-decoded-service-key"
-      }
-    }
-  }
-}
 ```
 
 ## 도구 설명
@@ -313,6 +377,6 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 ## 주의 사항
 
 - 공공데이터포털 문서에는 요청 URL이 `http`로 표기되어 있지만, 실제 호출은 `https`로도 동작합니다.
-- 서비스키가 없으면 게이트웨이는 `401 Unauthorized`를 반환할 수 있습니다.
+- 서비스키가 없거나 공백이면 서버 시작이 중단되고, 잘못된 키는 Air Korea 인증 오류로 반환됩니다.
 - `station_name`은 공식 측정소명을 정확히 넣는 편이 안전합니다.
 - LLM이 같은 요청을 반복 호출할 수 있으므로, 실제 운영용 서버에는 캐시와 호출 제한 보호막을 추가하는 편이 좋습니다.
