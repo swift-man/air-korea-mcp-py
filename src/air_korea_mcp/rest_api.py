@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from functools import lru_cache
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
@@ -9,7 +10,7 @@ from fastapi.responses import JSONResponse
 from . import __version__
 from .bootstrap import create_air_korea_service
 from .constants import DATASET_URL
-from .exceptions import AirKoreaError, AirKoreaGatewayError
+from .exceptions import AirKoreaConfigurationError, AirKoreaError, AirKoreaGatewayError
 from .reference import build_reference_payload
 from .rest_runtime import RestApiRuntimeConfig
 from .service import AirKoreaServiceProtocol
@@ -22,16 +23,28 @@ def get_service() -> AirKoreaServiceProtocol:
     return create_air_korea_service()
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    get_service()
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Air Korea REST API",
         description="REST API wrapper for Air Korea public OpenAPI data.",
         version=__version__,
+        lifespan=lifespan,
     )
 
     @app.exception_handler(AirKoreaError)
     def handle_air_korea_error(_, exc: AirKoreaError) -> JSONResponse:
-        status_code = 502 if isinstance(exc, AirKoreaGatewayError) else 400
+        if isinstance(exc, AirKoreaConfigurationError):
+            status_code = 503
+        elif isinstance(exc, AirKoreaGatewayError):
+            status_code = 502
+        else:
+            status_code = 400
         return JSONResponse(status_code=status_code, content={"detail": str(exc)})
 
     @app.get("/health", tags=["system"])
@@ -134,6 +147,7 @@ app = create_app()
 def main() -> None:
     try:
         config = RestApiRuntimeConfig.from_env()
+        get_service()
     except AirKoreaError as exc:
         raise SystemExit(str(exc)) from exc
 

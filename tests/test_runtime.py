@@ -1,7 +1,8 @@
 import os
 import unittest
+from unittest.mock import patch
 
-from air_korea_mcp.exceptions import AirKoreaError
+from air_korea_mcp.exceptions import AirKoreaConfigurationError
 from air_korea_mcp.runtime import RuntimeConfig, apply_runtime_config, build_transport_security
 
 
@@ -20,7 +21,16 @@ class DummyMcp:
 
 class RuntimeConfigTests(unittest.TestCase):
     def test_defaults(self):
-        config = RuntimeConfig.from_env()
+        with patch.dict(os.environ, {}, clear=False):
+            for name in (
+                "AIR_KOREA_MCP_HOST",
+                "AIR_KOREA_MCP_PORT",
+                "AIR_KOREA_MCP_PATH",
+                "AIR_KOREA_MCP_ALLOWED_HOSTS",
+                "AIR_KOREA_MCP_ALLOWED_ORIGINS",
+            ):
+                os.environ.pop(name, None)
+            config = RuntimeConfig.from_env()
 
         self.assertEqual("127.0.0.1", config.host)
         self.assertEqual(8000, config.port)
@@ -29,29 +39,15 @@ class RuntimeConfigTests(unittest.TestCase):
         self.assertEqual([], config.allowed_origins)
 
     def test_path_is_normalized(self):
-        old = os.environ.get("AIR_KOREA_MCP_PATH")
-        os.environ["AIR_KOREA_MCP_PATH"] = "custom"
-        try:
+        with patch.dict(os.environ, {"AIR_KOREA_MCP_PATH": "custom"}, clear=False):
             config = RuntimeConfig.from_env()
-        finally:
-            if old is None:
-                os.environ.pop("AIR_KOREA_MCP_PATH", None)
-            else:
-                os.environ["AIR_KOREA_MCP_PATH"] = old
 
         self.assertEqual("/custom", config.streamable_http_path)
 
     def test_invalid_port_raises(self):
-        old = os.environ.get("AIR_KOREA_MCP_PORT")
-        os.environ["AIR_KOREA_MCP_PORT"] = "abc"
-        try:
-            with self.assertRaises(AirKoreaError):
+        with patch.dict(os.environ, {"AIR_KOREA_MCP_PORT": "abc"}, clear=False):
+            with self.assertRaises(AirKoreaConfigurationError):
                 RuntimeConfig.from_env()
-        finally:
-            if old is None:
-                os.environ.pop("AIR_KOREA_MCP_PORT", None)
-            else:
-                os.environ["AIR_KOREA_MCP_PORT"] = old
 
     def test_apply_runtime_config(self):
         config = RuntimeConfig(host="0.0.0.0", port=9000, streamable_http_path="/air")

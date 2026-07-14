@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaConfigurationError
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -33,10 +33,10 @@ class RuntimeConfig:
         try:
             port = int(port_raw)
         except ValueError as exc:
-            raise AirKoreaError("AIR_KOREA_MCP_PORT must be an integer.") from exc
+            raise AirKoreaConfigurationError("AIR_KOREA_MCP_PORT must be an integer.") from exc
 
         if port < 1 or port > 65535:
-            raise AirKoreaError("AIR_KOREA_MCP_PORT must be between 1 and 65535.")
+            raise AirKoreaConfigurationError("AIR_KOREA_MCP_PORT must be between 1 and 65535.")
 
         if not path.startswith("/"):
             path = f"/{path}"

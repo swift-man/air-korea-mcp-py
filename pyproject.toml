@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "air-korea-mcp"
 version = "0.1.0"
-description = "MCP server for the Air Korea public OpenAPI"
+description = "MCP and FastAPI REST interfaces for the Air Korea public OpenAPI"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

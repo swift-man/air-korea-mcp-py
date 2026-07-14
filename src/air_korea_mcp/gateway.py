@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Protocol
+from typing import Any, Dict, List, Mapping, Optional, Protocol
 from urllib import error, parse, request
 
 from .constants import DATASET_NAME, DATASET_URL
@@ -38,6 +38,8 @@ class UrllibAirKoreaGateway:
             raise AirKoreaGatewayError(f"Air Korea API returned HTTP {exc.code}: {message}") from exc
         except error.URLError as exc:
             raise AirKoreaGatewayError(f"Air Korea API request failed: {exc.reason}") from exc
+        except TimeoutError as exc:
+            raise AirKoreaGatewayError("Air Korea API request timed out.") from exc
 
         try:
             payload = json.loads(raw_body)
@@ -59,12 +61,22 @@ def normalize_api_payload(
     endpoint: str,
     query_params: Mapping[str, Any],
     status_code: int,
-    payload: Mapping[str, Any],
+    payload: Any,
 ) -> Dict[str, Any]:
     plain_payload = to_plain_data(payload)
-    response = plain_payload.get("response", {})
-    header = response.get("header", {}) or {}
-    body = response.get("body", {}) or {}
+    if not isinstance(plain_payload, Mapping):
+        raise AirKoreaGatewayError("Air Korea API returned JSON that is not an object.")
+
+    response_value = plain_payload.get("response")
+    if response_value is None:
+        portal_error = extract_portal_error(plain_payload)
+        if portal_error:
+            raise AirKoreaGatewayError(f"Air Korea API error: {portal_error}")
+        raise AirKoreaGatewayError("Air Korea API response did not contain a response object.")
+
+    response = require_mapping("response", response_value)
+    header = require_mapping("response.header", response.get("header") or {})
+    body = require_mapping("response.body", response.get("body") or {})
 
     result_code = str(header.get("resultCode", ""))
     result_message = str(header.get("resultMsg", ""))
@@ -91,6 +103,29 @@ def normalize_api_payload(
         "total_count": normalized_body.get("totalCount"),
         "items": normalized_body.get("items", []),
     }
+
+
+def require_mapping(field_name: str, value: Any) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise AirKoreaGatewayError(f"Air Korea API field {field_name} must be an object.")
+    return value
+
+
+def extract_portal_error(payload: Mapping[str, Any]) -> Optional[str]:
+    service_response = payload.get("OpenAPI_ServiceResponse", payload)
+    if not isinstance(service_response, Mapping):
+        return None
+
+    header = service_response.get("cmmMsgHeader")
+    if not isinstance(header, Mapping):
+        return None
+
+    details = [
+        str(header[key]).strip()
+        for key in ("returnReasonCode", "returnAuthMsg", "errMsg")
+        if header.get(key) not in (None, "")
+    ]
+    return ": ".join(details) or None
 
 
 def normalize_items(items: Any) -> List[Any]:

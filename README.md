@@ -67,7 +67,7 @@
 SOLID 관점에서 책임을 다음처럼 나눴습니다.
 
 - `bootstrap.py`: composition root, settings와 gateway를 조립해서 service 생성
-- `settings.py`: 환경 변수와 런타임 설정 로딩
+- `settings.py`: Air Korea API 환경 설정 로딩
 - `validation.py`: 입력 검증
 - `gateway.py`: HTTP 전송과 Air Korea 응답 정규화
 - `service.py`: MCP 도구가 호출하는 유스케이스 계층
@@ -159,12 +159,13 @@ claude mcp add --transport http air-korea http://127.0.0.1:8000/mcp
 
 `.env` 파일이 있으면 `scripts/run_http.sh`가 함께 읽고, 변수들을 MCP 프로세스에 export합니다.
 
-`.env` 예시는 [.env.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/.env.example)에 있습니다.
+`.env` 예시는 [.env.example](.env.example)에 있습니다.
 
 ## REST API 실행
 
 FastAPI REST 서버는 MCP 서버와 별도로 실행합니다.
 서비스키는 MCP와 동일하게 `AIR_KOREA_SERVICE_KEY` 또는 `AIR_KOREA_SERVICE_KEY_ENCODED`를 사용합니다.
+서버 시작 시 서비스키 설정을 검증하며, 설정이 없거나 잘못되면 요청을 받기 전에 시작을 중단합니다.
 
 ```bash
 ./scripts/run_rest_api.sh
@@ -240,7 +241,7 @@ curl 'http://127.0.0.1:8010/api/data-go-kr/account-view'
 Streamable HTTP 서버라서 `systemd` 백그라운드 서비스 등록이 가능합니다.
 
 예제 유닛 파일:
-- [air-korea-mcp.service.example](/Users/kim_seung_jin/개발/air-korea-mcp-py/deploy/systemd/air-korea-mcp.service.example)
+- [air-korea-mcp.service.example](deploy/systemd/air-korea-mcp.service.example)
 
 기본 방식:
 - `systemd`는 `scripts/run_http.sh`를 실행합니다.
@@ -325,22 +326,10 @@ sudo systemctl status air-korea-mcp
 ## 테스트
 
 ```bash
+bash -n scripts/run_http.sh
+bash -n scripts/run_rest_api.sh
+python3 -m compileall src tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-```
-
-## Claude Desktop / Codex 예시
-
-```json
-{
-  "mcpServers": {
-    "air-korea": {
-      "command": "air-korea-mcp",
-      "env": {
-        "AIR_KOREA_SERVICE_KEY": "your-decoded-service-key"
-      }
-    }
-  }
-}
 ```
 
 ## 도구 설명

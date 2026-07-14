@@ -6,7 +6,7 @@ from typing import Optional
 from urllib import parse
 
 from .constants import API_BASE, DEFAULT_TIMEOUT_SECONDS
-from .exceptions import AirKoreaError
+from .exceptions import AirKoreaConfigurationError
 
 
 @dataclass(frozen=True)
@@ -19,7 +19,7 @@ class ServiceKeyConfig:
         raw_key = os.getenv("AIR_KOREA_SERVICE_KEY")
         encoded_key = os.getenv("AIR_KOREA_SERVICE_KEY_ENCODED")
         if not raw_key and not encoded_key:
-            raise AirKoreaError(
+            raise AirKoreaConfigurationError(
                 "Set AIR_KOREA_SERVICE_KEY or AIR_KOREA_SERVICE_KEY_ENCODED before starting the server."
             )
         return cls(raw_key=raw_key, encoded_key=encoded_key)
@@ -45,7 +45,7 @@ class AirKoreaSettings:
         try:
             timeout_seconds = float(timeout_raw)
         except ValueError as exc:
-            raise AirKoreaError("AIR_KOREA_TIMEOUT_SECONDS must be numeric.") from exc
+            raise AirKoreaConfigurationError("AIR_KOREA_TIMEOUT_SECONDS must be numeric.") from exc
 
         return cls(
             service_key=ServiceKeyConfig.from_env(),
